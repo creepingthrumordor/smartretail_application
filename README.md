@@ -16,7 +16,12 @@ A Python desktop application for retail transaction ingestion, validation, dedup
 
 ## Demo
 
+<details>
+<summary>▶ Play the SmartRetail demo</summary>
+
 https://github.com/user-attachments/assets/c714104c-65a9-4262-88fa-36e65460cd82
+
+</details>
 
 ## Run
 
