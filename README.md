@@ -7,11 +7,13 @@ A Python desktop application for chunked retail transaction ingestion, validatio
 ```bash
 python -m pip install -r requirements.txt
 python3 main.py
-
-## Testing
 ```
 
+## Testing
+
+```bash
 python -m pytest -v
+```
 
 The analytics engine uses Python's standard library. Export a formatted PDF summary report by default, with CSV data and HTML report exports also available.
 

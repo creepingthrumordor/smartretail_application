@@ -21,6 +21,44 @@ GOLD = '#F99F46'
 LAVENDER = '#B9AA87'
 SLATE = '#493E2B'
 
+class RoundedSurface(tk.Frame):
+    """Canvas-backed material surface with a subtle drop shadow."""
+    def __init__(self,master,color=PANEL,radius=14,inset=14,**kwargs):
+        super().__init__(master,bg=master.cget('bg'),bd=0,highlightthickness=0,**kwargs)
+        self.fill=color;self.radius=radius;self.inset=inset
+        self.canvas=tk.Canvas(self,bg=master.cget('bg'),highlightthickness=0,bd=0)
+        self.canvas.place(x=0,y=0,relwidth=1,relheight=1)
+        self.shadow=self.canvas.create_polygon(0,0,0,0,smooth=True,splinesteps=20,fill='#15120C',outline='')
+        self.shape=self.canvas.create_polygon(0,0,0,0,smooth=True,splinesteps=20,fill=color,outline='')
+        self.content=tk.Frame(self,bg=color,bd=0,highlightthickness=0)
+        self.window=self.canvas.create_window(inset,inset,anchor='nw',window=self.content)
+        self.bind('<Configure>',self._resize)
+    def _rounded_points(self,width,height,offset=0):
+        r=min(self.radius,max(2,(height-2*offset)/2));x0=y0=offset;x1=width-offset;y1=height-offset
+        return [x0+r,y0,x1-r,y0,x1,y0,x1,y0+r,x1,y1-r,x1,y1,x1-r,y1,x0+r,y1,x0,y1,x0,y1-r,x0,y0+r,x0,y0]
+    def _resize(self,event):
+        if event.width<3 or event.height<3:return
+        self.canvas.coords(self.shadow,*self._rounded_points(event.width,event.height,2))
+        self.canvas.coords(self.shape,*self._rounded_points(event.width,event.height,0))
+        self.canvas.coords(self.window,self.inset,self.inset)
+        self.canvas.itemconfigure(self.window,width=max(1,event.width-2*self.inset),height=max(1,event.height-2*self.inset))
+
+class MaterialButton(tk.Canvas):
+    """Rounded, borderless button with restrained material-style feedback."""
+    def __init__(self,master,text,command,fill,foreground=DARK,height=42):
+        super().__init__(master,height=height,bg=master.cget('bg'),highlightthickness=0,bd=0,cursor='hand2')
+        self.text=text;self.command=command;self.base=fill;self.current=fill;self.foreground=foreground;self.height=height
+        self.bind('<Configure>',self._draw);self.bind('<Button-1>',self._click)
+        self.bind('<Enter>',lambda _event:self._set_fill(GOLD if self.base==ACCENT else '#5A4A32'))
+        self.bind('<Leave>',lambda _event:self._set_fill(self.base))
+    def _click(self,_event):self.command()
+    def _set_fill(self,color):self.current=color;self._draw()
+    def _draw(self,_event=None):
+        self.delete('all');w=max(self.winfo_width(),100);h=self.height;r=11
+        points=[r,0,w-r,0,w,0,w,r,w,h-r,w,h,w-r,h,r,h,0,h,0,h-r,0,r,0,0]
+        self.create_polygon(*points,smooth=True,splinesteps=20,fill=self.current,outline=self.current)
+        self.create_text(14,h/2,text=self.text,anchor='w',fill=self.foreground,font=('TkDefaultFont',10,'bold'))
+
 class DashboardWindow:
     def __init__(self, facade=None):
         self.facade = facade or SmartRetailFacade()
@@ -39,8 +77,11 @@ class DashboardWindow:
         style=ttk.Style(self.root)
         try: style.theme_use('clam')
         except tk.TclError: pass
-        style.configure('TCombobox',fieldbackground=PANEL,background=SLATE,foreground=DARK,arrowcolor=DARK)
-        style.map('TCombobox',fieldbackground=[('readonly',PANEL)],foreground=[('readonly',DARK)])
+        style.configure('TCombobox',fieldbackground=PANEL,background=SLATE,foreground=DARK,arrowcolor=DARK,
+                        bordercolor=SLATE,lightcolor=SLATE,darkcolor=SLATE,relief='flat',borderwidth=0)
+        style.map('TCombobox',fieldbackground=[('readonly',PANEL)],foreground=[('readonly',DARK)],
+                  bordercolor=[('focus',ACCENT),('!focus',SLATE)],lightcolor=[('focus',ACCENT),('!focus',SLATE)],
+                  darkcolor=[('focus',ACCENT),('!focus',SLATE)])
         style.configure('Treeview',background='#292216',fieldbackground='#292216',foreground=DARK,rowheight=26,borderwidth=0)
         style.configure('Treeview.Heading',background=SLATE,foreground=DARK,relief='flat')
         style.map('Treeview',background=[('selected','#5E472D')])
@@ -61,6 +102,20 @@ class DashboardWindow:
         self._button(side, '▶   Run analysis', self.run, primary=True).pack(fill='x', pady=(18, 7))
         self._button(side, 'View quarantine log', lambda: DLQWindow(self.root, self.facade.get_dlq())).pack(fill='x', pady=3)
         self._button(side, 'Export report', self.export).pack(fill='x', pady=3)
+        self.loader_slot=tk.Frame(side,bg='#211C12',height=50);self.loader_slot.pack(fill='x');self.loader_slot.pack_propagate(False)
+        self.loader_group=tk.Frame(self.loader_slot,bg='#211C12')
+        self.loader = tk.Canvas(self.loader_group,width=40,height=40,bg='#211C12',highlightthickness=0)
+        self.loader.pack(side='left')
+        self._loader_track=self.loader.create_oval(5,5,35,35,outline='#493E2B',width=3)
+        self._loader_arc=self.loader.create_arc(4,4,36,36,start=20,extent=105,style='arc',outline=ACCENT,width=4)
+        self._loader_arc2=self.loader.create_arc(4,4,36,36,start=175,extent=35,style='arc',outline=GOLD,width=3)
+        self.loader.create_oval(17,17,23,23,fill=ACCENT,outline='')
+        self.loader.tag_raise(self._loader_arc)
+        self.loader.tag_raise(self._loader_arc2)
+        self.loader_text=tk.Label(self.loader_group,text='Processing…',fg=MUTED,bg='#211C12',font=('TkDefaultFont',9,'bold'),anchor='w')
+        self.loader_text.pack(side='left',padx=(8,0))
+        self.loader_group.place_forget()
+        self._loader_angle=20;self._loader_running=False
         tk.Frame(side, bg='#211C12').pack(fill='both', expand=True)
         tk.Label(side, text='Streaming analysis  •  Decimal-safe', fg=MUTED, bg='#211C12', font=('TkDefaultFont', 9)).pack(anchor='w')
 
@@ -68,25 +123,21 @@ class DashboardWindow:
         header = tk.Frame(main, bg=BG); header.pack(fill='x')
         tk.Label(header, text='Retail performance', font=('TkDefaultFont', 23, 'bold'), fg=DARK, bg=BG).pack(side='left')
         tk.Label(header, textvariable=self.status, font=('TkDefaultFont', 10), fg=MUTED, bg=BG).pack(side='right')
-        self.progress = ttk.Progressbar(main, mode='indeterminate'); self.progress.pack(fill='x', pady=(15, 16))
-
         self.cards = tk.Frame(main, bg=BG); self.cards.pack(fill='x', pady=(0, 16))
         self.kpis = {}
         for key, title, initial in [('rows','ROWS PROCESSED','—'),('revenue','NET REVENUE','—'),('dlq','QUARANTINED','—'),('speed','ELAPSED TIME','—')]:
-            card=tk.Frame(self.cards,bg=PANEL,padx=16,pady=13,highlightthickness=1,highlightbackground='#493E2B');card.pack(side='left',fill='x',expand=True,padx=(0,10))
-            tk.Label(card,text=title,fg=DARK,bg=PANEL,font=('TkDefaultFont',9,'bold')).pack(anchor='w')
+            shell=RoundedSurface(self.cards,color=PANEL,radius=14,inset=14);shell.configure(height=100);shell.pack_propagate(False);shell.pack(side='left',fill='x',expand=True,padx=(0,10));card=shell.content
+            tk.Label(card,text=title,fg=MUTED,bg=PANEL,font=('TkDefaultFont',9,'bold')).pack(anchor='w')
             label=tk.Label(card,text=initial,fg=DARK,bg=PANEL,font=('TkDefaultFont',18,'bold'));label.pack(anchor='w',pady=(7,0));self.kpis[key]=label
 
-        self.chart_panel = tk.Frame(main, bg=PANEL); self.chart_panel.pack(fill='both', expand=True)
+        chart_shell=RoundedSurface(main,color=PANEL,radius=19,inset=17);chart_shell.pack(fill='both',expand=True);self.chart_panel=chart_shell.content
         self.chart_title = tk.Label(self.chart_panel, text='Analysis overview', fg=DARK, bg=PANEL, font=('TkDefaultFont', 14, 'bold'))
         self.chart_title.pack(anchor='w', padx=18, pady=(14, 0))
         self.chart_host = tk.Frame(self.chart_panel, bg=PANEL); self.chart_host.pack(fill='both', expand=True, padx=12, pady=8)
         self._placeholder()
 
     def _button(self, parent, text, command, primary=False):
-        return tk.Button(parent, text=text, command=command, anchor='w', padx=12, pady=9,
-                         bg=ACCENT if primary else SLATE, fg=BG if primary else DARK, activebackground=GOLD,
-                         activeforeground=DARK, relief='flat', cursor='hand2')
+        return MaterialButton(parent,text,command,ACCENT if primary else SLATE,foreground=BG if primary else DARK)
 
     def _analysis_changed(self, _event=None):
         label=self.analysis_menu.get(); self.analysis.set(self.analysis_labels[label])
@@ -103,7 +154,7 @@ class DashboardWindow:
 
     def run(self):
         if not self.path.get():messagebox.showinfo('Dataset required','Choose a CSV or log file first.');return
-        self._analysis_changed(); self.progress.start(10); self.status.set('Processing dataset…')
+        self._analysis_changed(); self._start_loader(); self.status.set('Processing dataset…')
         self._button_state('disabled')
         def worker():
             try:
@@ -116,7 +167,19 @@ class DashboardWindow:
     def _button_state(self,state):
         # Keep the sidebar responsive while a worker processes the file.
         pass
-    def _finish_run(self):self.progress.stop();self._button_state('normal')
+    def _start_loader(self):
+        if self._loader_running:return
+        self._loader_running=True
+        self.loader_group.place(relx=.5,rely=.5,anchor='center')
+        self._spin_loader()
+    def _spin_loader(self):
+        if not self._loader_running:return
+        self._loader_angle=(self._loader_angle+18)%360
+        self.loader.itemconfigure(self._loader_arc,start=self._loader_angle)
+        self.loader.itemconfigure(self._loader_arc2,start=(self._loader_angle+155)%360)
+        self.root.after(35,self._spin_loader)
+    def _finish_run(self):
+        self._loader_running=False;self.loader_group.place_forget();self._button_state('normal')
     def showProgress(self,percent):self.status.set(f'Processing {percent:.0f}%')
 
     def showResults(self,result):
