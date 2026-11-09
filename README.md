@@ -16,8 +16,12 @@ A Python desktop application for retail transaction ingestion, validation, dedup
 
 ## Demo
 
+Click the preview to open the video, where playback can be started and paused:
+
 <p align="center">
-  <video src="demo.mp4" controls width="1000" poster="showcase.png"></video>
+  <a href="demo.mp4">
+    <img src="showcase.png" alt="Open the SmartRetail demo video" width="1000" />
+  </a>
 </p>
 
 ## Run
