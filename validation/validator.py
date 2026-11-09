@@ -1,23 +1,74 @@
+"""Parse and validate raw rows into transaction domain records."""
+
 import csv
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
+
 from smartretail.config import CSV_FIELDS
 from smartretail.core.domain import RawRecord, TransactionRecord
+
+
 class RecordValidator:
-    def parse_and_validate(self,raw:RawRecord):
+    """Convert one raw CSV row, returning a record or an error message."""
+
+    def parse_and_validate(
+        self, raw: RawRecord
+    ) -> tuple[TransactionRecord | None, str | None]:
         try:
-            row=next(csv.reader([raw.data]))
-            if len(row)!=22: return None,f'Expected 22 fields, received {len(row)}'
-            d=dict(zip(CSV_FIELDS,(x.strip() for x in row)))
-            if not d['transaction_id']: return None,'Missing transaction_id'
-            dt=datetime.strptime(d['transaction_datetime'],'%m/%d/%Y %H:%M')
-            qty=int(d['quantity']); typ=d['transaction_type']
-            price=Decimal(d['unit_price']); amount=Decimal(d['total_amount'])
-            if typ=='Sale' and price<0:return None,'Negative unit price on Sale'
-            if typ=='Return' and qty>=0:return None,'Return quantity must be negative'
-            age=int(d['customer_age']) if d['customer_age'] else None
-            discount=Decimal(d['discount_percent']) if d['discount_percent'] else None
-            rec=TransactionRecord(d['transaction_id'],dt,d['store_id'],d['store_city'],d['region'],d['warehouse_id'],d['customer_id'] or None,age,d['customer_gender'] or None,d['customer_city'] or None,d['product_category'],d['product_name'],qty,price,discount,d['promotion_name'] or None,d['payment_method'] or 'Unknown',d['channel'],amount,int(d['stock_on_hand']),int(d['reorder_level']),typ,typ=='Return')
-            return rec,None
-        except (ValueError,InvalidOperation,StopIteration) as exc:return None,f'Invalid transaction record: {exc}'
-    parseAndValidate=parse_and_validate
+            row = next(csv.reader([raw.data]))
+            if len(row) != len(CSV_FIELDS):
+                return None, f"Expected {len(CSV_FIELDS)} fields, received {len(row)}"
+
+            data = dict(zip(CSV_FIELDS, (value.strip() for value in row)))
+            if not data["transaction_id"]:
+                return None, "Missing transaction_id"
+
+            timestamp = datetime.strptime(
+                data["transaction_datetime"], "%m/%d/%Y %H:%M"
+            )
+            quantity = int(data["quantity"])
+            transaction_type = data["transaction_type"]
+            unit_price = Decimal(data["unit_price"])
+            total_amount = Decimal(data["total_amount"])
+
+            if transaction_type == "Sale" and unit_price < 0:
+                return None, "Negative unit price on Sale"
+            if transaction_type == "Return" and quantity >= 0:
+                return None, "Return quantity must be negative"
+
+            customer_age = int(data["customer_age"]) if data["customer_age"] else None
+            discount = (
+                Decimal(data["discount_percent"])
+                if data["discount_percent"]
+                else None
+            )
+            record = TransactionRecord(
+                transaction_id=data["transaction_id"],
+                transaction_datetime=timestamp,
+                store_id=data["store_id"],
+                store_city=data["store_city"],
+                region=data["region"],
+                warehouse_id=data["warehouse_id"],
+                customer_id=data["customer_id"] or None,
+                customer_age=customer_age,
+                customer_gender=data["customer_gender"] or None,
+                customer_city=data["customer_city"] or None,
+                product_category=data["product_category"],
+                product_name=data["product_name"],
+                quantity=quantity,
+                unit_price=unit_price,
+                discount_percent=discount,
+                promotion_name=data["promotion_name"] or None,
+                payment_method=data["payment_method"] or "Unknown",
+                channel=data["channel"],
+                total_amount=total_amount,
+                stock_on_hand=int(data["stock_on_hand"]),
+                reorder_level=int(data["reorder_level"]),
+                transaction_type=transaction_type,
+                is_return=transaction_type == "Return",
+            )
+            return record, None
+        except (ValueError, InvalidOperation, StopIteration) as exc:
+            return None, f"Invalid transaction record: {exc}"
+
+    parseAndValidate = parse_and_validate

@@ -1,11 +1,59 @@
+"""Store and region revenue, volume, and inventory comparisons."""
+
 from collections import defaultdict
+from decimal import Decimal
+
+from smartretail.core.domain import AnalyticsResult, TransactionRecord
 from .base import IAnalyticsStrategy
-from smartretail.core.domain import AnalyticsResult
+
+
 class StoreRegionalPerformanceStrategy(IAnalyticsStrategy):
- def __init__(self):super().__init__();self.stores=defaultdict(lambda:[0,0,0,0]);self.regions=defaultdict(lambda:[0,0])
- def consume(self,records):
-  super().consume(records)
-  for r in records:
-   a=self.stores[r.store_id];a[0]+=r.total_amount;a[1]+=1;a[2]+=r.stock_on_hand;a[3]+=r.reorder_level
-   b=self.regions[r.region];b[0]+=r.total_amount;b[1]+=1
- def build_result(self):return AnalyticsResult(type(self).__name__,{'records':self.records,'net_revenue':str(self.revenue)},{'stores':[{'store_id':k,'revenue':str(v[0]),'transactions':v[1],'stock_to_reorder':v[2]/v[3] if v[3] else None} for k,v in sorted(self.stores.items(),key=lambda x:x[1][0],reverse=True)],'regions':[{'region':k,'revenue':str(v[0]),'transactions':v[1]} for k,v in self.regions.items()]})
+    """Accumulate store and regional performance metrics incrementally."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.stores: dict[str, list[Decimal | int]] = defaultdict(
+            lambda: [Decimal("0"), 0, 0, 0]
+        )
+        self.regions: dict[str, list[Decimal | int]] = defaultdict(
+            lambda: [Decimal("0"), 0]
+        )
+
+    def consume(self, records: list[TransactionRecord]) -> None:
+        super().consume(records)
+        for record in records:
+            store = self.stores[record.store_id]
+            store[0] += record.total_amount
+            store[1] += 1
+            store[2] += record.stock_on_hand
+            store[3] += record.reorder_level
+
+            region = self.regions[record.region]
+            region[0] += record.total_amount
+            region[1] += 1
+
+    def build_result(self) -> AnalyticsResult:
+        store_rows = [
+            {
+                "store_id": store_id,
+                "revenue": str(values[0]),
+                "transactions": values[1],
+                "stock_to_reorder": values[2] / values[3] if values[3] else None,
+            }
+            for store_id, values in sorted(
+                self.stores.items(), key=lambda item: item[1][0], reverse=True
+            )
+        ]
+        region_rows = [
+            {
+                "region": region_name,
+                "revenue": str(values[0]),
+                "transactions": values[1],
+            }
+            for region_name, values in self.regions.items()
+        ]
+        return AnalyticsResult(
+            strategy_name=type(self).__name__,
+            summary={"records": self.records, "net_revenue": str(self.revenue)},
+            tables={"stores": store_rows, "regions": region_rows},
+        )

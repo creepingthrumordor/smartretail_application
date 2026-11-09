@@ -1,4 +1,13 @@
-from abc import ABC,abstractmethod
+"""Exporter interface for analytics results."""
+
+from abc import ABC, abstractmethod
+
+from smartretail.core.domain import AnalyticsResult
+
+
 class IResultExporter(ABC):
- @abstractmethod
- def export(self,result,destination):...
+    """Write an analysis result to a destination."""
+
+    @abstractmethod
+    def export(self, result: AnalyticsResult, destination: str) -> str | None:
+        raise NotImplementedError

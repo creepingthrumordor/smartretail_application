@@ -1,12 +1,36 @@
+"""Detect repeated transaction IDs and distinguish exact row duplicates."""
+
+import hashlib
+import json
 from dataclasses import asdict
-import hashlib,json
+
+from smartretail.core.domain import TransactionRecord
+
+
 class DuplicateDetector:
-    def __init__(self): self._seen={}; self.duplicates=0
-    def check(self,record):
-        payload=asdict(record); payload.pop('transaction_datetime',None); payload['transaction_datetime']=record.transaction_datetime.isoformat()
-        digest=hashlib.sha256(json.dumps(payload,sort_keys=True,default=str).encode()).hexdigest()
-        old=self._seen.get(record.transaction_id)
-        if old is None:self._seen[record.transaction_id]=digest;return 'new'
-        if old==digest:self.duplicates+=1;return 'duplicate'
-        return 'conflict'
-    def is_duplicate(self,record): return self.check(record)=='duplicate'
+    """Track a stable content digest for each first-seen transaction ID."""
+
+    def __init__(self) -> None:
+        self._seen: dict[str, str] = {}
+        self.duplicates = 0
+
+    @staticmethod
+    def _content_digest(record: TransactionRecord) -> str:
+        payload = asdict(record)
+        payload["transaction_datetime"] = record.transaction_datetime.isoformat()
+        serialized = json.dumps(payload, sort_keys=True, default=str).encode()
+        return hashlib.sha256(serialized).hexdigest()
+
+    def check(self, record: TransactionRecord) -> str:
+        digest = self._content_digest(record)
+        existing_digest = self._seen.get(record.transaction_id)
+        if existing_digest is None:
+            self._seen[record.transaction_id] = digest
+            return "new"
+        if existing_digest == digest:
+            self.duplicates += 1
+            return "duplicate"
+        return "conflict"
+
+    def is_duplicate(self, record: TransactionRecord) -> bool:
+        return self.check(record) == "duplicate"
