@@ -16,11 +16,7 @@ A Python desktop application for retail transaction ingestion, validation, dedup
 
 ## Demo
 
-<p align="center">
-  <video src="https://github.com/user-attachments/assets/c714104c-65a9-4262-88fa-36e65460cd82" controls width="1000">
-    Your browser does not support embedded video.
-  </video>
-</p>
+https://github.com/user-attachments/assets/c714104c-65a9-4262-88fa-36e65460cd82
 
 ## Run
 
