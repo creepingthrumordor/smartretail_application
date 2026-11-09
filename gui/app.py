@@ -9,18 +9,17 @@ from smartretail.config import ANALYSES
 from smartretail.services.facade import SmartRetailFacade
 from .components.dlq_modal import DLQWindow
 
-# Exact swatches sampled from the user's reference image.
-BG = '#DFDCE3'          # lavender gray
-PANEL = '#AAAAAA'       # neutral gray
-MUTED = '#45434A'
-DARK = '#302E33'
-ACCENT = '#FC4A14'      # orange
-TEAL = '#4ABDAC'
-CORAL = '#FC4A14'
-GOLD = '#F7B733'
-LAVENDER = '#DFDCE3'
-SLATE = '#AAAAAA'
-SURFACE = '#F8F7F9'
+# Warm dark palette sampled from the reference screenshot.
+BG = '#1C180F'
+PANEL = '#322A1C'
+MUTED = '#A89B81'
+DARK = '#E8DDC4'       # foreground text
+ACCENT = '#F99F46'
+TEAL = '#B69A63'
+CORAL = '#E77D4A'
+GOLD = '#F99F46'
+LAVENDER = '#B9AA87'
+SLATE = '#493E2B'
 
 class DashboardWindow:
     def __init__(self, facade=None):
@@ -40,19 +39,20 @@ class DashboardWindow:
         style=ttk.Style(self.root)
         try: style.theme_use('clam')
         except tk.TclError: pass
-        style.configure('TCombobox',fieldbackground=BG,background=TEAL,foreground=DARK,arrowcolor=DARK)
-        style.map('TCombobox',fieldbackground=[('readonly',BG)],foreground=[('readonly',DARK)])
-        style.configure('Treeview',background='#F4F2F5',fieldbackground='#F4F2F5',foreground=DARK,rowheight=26,borderwidth=0)
+        style.configure('TCombobox',fieldbackground=PANEL,background=SLATE,foreground=DARK,arrowcolor=DARK)
+        style.map('TCombobox',fieldbackground=[('readonly',PANEL)],foreground=[('readonly',DARK)])
+        style.configure('Treeview',background='#292216',fieldbackground='#292216',foreground=DARK,rowheight=26,borderwidth=0)
         style.configure('Treeview.Heading',background=SLATE,foreground=DARK,relief='flat')
-        style.map('Treeview',background=[('selected',TEAL)])
-        side = tk.Frame(self.root, bg=TEAL, width=260, padx=18, pady=22)
+        style.map('Treeview',background=[('selected','#5E472D')])
+        style.configure('Horizontal.TProgressbar',troughcolor='#403624',background=ACCENT,bordercolor='#403624',lightcolor=ACCENT,darkcolor=ACCENT)
+        side = tk.Frame(self.root, bg='#211C12', width=260, padx=18, pady=22)
         side.pack(side='left', fill='y'); side.pack_propagate(False)
-        tk.Label(side, text='SmartRetail', font=('TkDefaultFont', 21, 'bold'), fg=DARK, bg=TEAL).pack(anchor='w')
-        tk.Label(side, text='ANALYTICS  /  ENTERPRISE', font=('TkDefaultFont', 9, 'bold'), fg=DARK, bg=TEAL).pack(anchor='w', pady=(3, 25))
-        tk.Label(side, text='DATA SOURCE', font=('TkDefaultFont', 9, 'bold'), fg=DARK, bg=TEAL).pack(anchor='w', pady=(0, 8))
+        tk.Label(side, text='SmartRetail', font=('TkDefaultFont', 21, 'bold'), fg=DARK, bg='#211C12').pack(anchor='w')
+        tk.Label(side, text='ANALYTICS  /  ENTERPRISE', font=('TkDefaultFont', 9, 'bold'), fg=ACCENT, bg='#211C12').pack(anchor='w', pady=(3, 25))
+        tk.Label(side, text='DATA SOURCE', font=('TkDefaultFont', 9, 'bold'), fg=MUTED, bg='#211C12').pack(anchor='w', pady=(0, 8))
         self._button(side, 'Choose dataset', self.choose_input).pack(fill='x')
-        tk.Label(side, textvariable=self.path, wraplength=215, justify='left', fg=DARK, bg=TEAL).pack(anchor='w', pady=10)
-        tk.Label(side, text='ANALYSIS VIEW', font=('TkDefaultFont', 9, 'bold'), fg=DARK, bg=TEAL).pack(anchor='w', pady=(22, 8))
+        tk.Label(side, textvariable=self.path, wraplength=215, justify='left', fg=DARK, bg='#211C12').pack(anchor='w', pady=10)
+        tk.Label(side, text='ANALYSIS VIEW', font=('TkDefaultFont', 9, 'bold'), fg=MUTED, bg='#211C12').pack(anchor='w', pady=(22, 8))
         names = ['Peak sales', 'Customer segments', 'Seasonal & promo', 'Product revenue', 'Anomaly alerts', 'Store & region']
         self.analysis_labels = dict(zip(names, ANALYSES))
         self.analysis_menu = ttk.Combobox(side, values=names, state='readonly')
@@ -61,8 +61,8 @@ class DashboardWindow:
         self._button(side, '▶   Run analysis', self.run, primary=True).pack(fill='x', pady=(18, 7))
         self._button(side, 'View quarantine log', lambda: DLQWindow(self.root, self.facade.get_dlq())).pack(fill='x', pady=3)
         self._button(side, 'Export report', self.export).pack(fill='x', pady=3)
-        tk.Frame(side, bg=TEAL).pack(fill='both', expand=True)
-        tk.Label(side, text='Streaming analysis  •  Decimal-safe', fg=DARK, bg=TEAL, font=('TkDefaultFont', 9)).pack(anchor='w')
+        tk.Frame(side, bg='#211C12').pack(fill='both', expand=True)
+        tk.Label(side, text='Streaming analysis  •  Decimal-safe', fg=MUTED, bg='#211C12', font=('TkDefaultFont', 9)).pack(anchor='w')
 
         main = tk.Frame(self.root, bg=BG, padx=26, pady=22); main.pack(side='left', fill='both', expand=True)
         header = tk.Frame(main, bg=BG); header.pack(fill='x')
@@ -73,7 +73,7 @@ class DashboardWindow:
         self.cards = tk.Frame(main, bg=BG); self.cards.pack(fill='x', pady=(0, 16))
         self.kpis = {}
         for key, title, initial in [('rows','ROWS PROCESSED','—'),('revenue','NET REVENUE','—'),('dlq','QUARANTINED','—'),('speed','ELAPSED TIME','—')]:
-            card=tk.Frame(self.cards,bg=PANEL,padx=16,pady=13,highlightthickness=1,highlightbackground='#3c3d41');card.pack(side='left',fill='x',expand=True,padx=(0,10))
+            card=tk.Frame(self.cards,bg=PANEL,padx=16,pady=13,highlightthickness=1,highlightbackground='#493E2B');card.pack(side='left',fill='x',expand=True,padx=(0,10))
             tk.Label(card,text=title,fg=DARK,bg=PANEL,font=('TkDefaultFont',9,'bold')).pack(anchor='w')
             label=tk.Label(card,text=initial,fg=DARK,bg=PANEL,font=('TkDefaultFont',18,'bold'));label.pack(anchor='w',pady=(7,0));self.kpis[key]=label
 
@@ -85,7 +85,7 @@ class DashboardWindow:
 
     def _button(self, parent, text, command, primary=False):
         return tk.Button(parent, text=text, command=command, anchor='w', padx=12, pady=9,
-                         bg=ACCENT if primary else SLATE, fg=DARK, activebackground=GOLD,
+                         bg=ACCENT if primary else SLATE, fg=BG if primary else DARK, activebackground=GOLD,
                          activeforeground=DARK, relief='flat', cursor='hand2')
 
     def _analysis_changed(self, _event=None):
@@ -122,7 +122,7 @@ class DashboardWindow:
     def showResults(self,result):
         total=result.summary.get('total_rows',0); dlq=self.facade.get_dlq().count(); elapsed=result.execution_time_sec
         revenue=result.summary.get('net_revenue','—')
-        try:revenue=f'${Decimal(str(revenue)):,.2f}'
+        try:revenue=f'LKR {Decimal(str(revenue)):,.2f}'
         except Exception:pass
         self.kpis['rows'].configure(text=f'{total:,}')
         self.kpis['revenue'].configure(text=revenue)
@@ -184,9 +184,9 @@ class DashboardWindow:
     def show_results(self,result):self.showResults(result)
     def export(self):
         if not hasattr(self,'last_result'):messagebox.showinfo('No results','Run an analysis before exporting.');return
-        path=filedialog.asksaveasfilename(defaultextension='.csv',filetypes=[('CSV report','*.csv'),('HTML report','*.html')])
+        path=filedialog.asksaveasfilename(defaultextension='.pdf',filetypes=[('PDF summary report','*.pdf'),('CSV data export','*.csv'),('HTML report','*.html')])
         if path:
-            fmt='html' if path.lower().endswith('.html') else 'csv'
+            fmt='html' if path.lower().endswith('.html') else 'csv' if path.lower().endswith('.csv') else 'pdf'
             try:self.facade.export_result(self.last_result,fmt,path)
             except Exception as exc:messagebox.showerror('Export failed',str(exc))
     def start(self):self.root.mainloop()

@@ -9,7 +9,7 @@ python -m pip install -r requirements.txt
 python -m main
 ```
 
-The analytics engine uses only the Python standard library. GUI charts are presented as detailed analysis tables in this initial desktop shell; exports include CSV data or an HTML report.
+The analytics engine uses Python's standard library. Export a formatted PDF summary report by default, with CSV data and HTML report exports also available.
 
 ## Input and outputs
 
