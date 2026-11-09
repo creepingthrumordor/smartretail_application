@@ -17,11 +17,12 @@ A Python desktop application for retail transaction ingestion, validation, dedup
 ## Demo
 
 <p align="center">
-  <video controls width="1000" poster="showcase.png">
-    <source src="demo.mp4" type="video/mp4">
-    Your browser does not support embedded video. <a href="demo.mp4">Download the demo</a>.
-  </video>
+  <a href="https://raw.githubusercontent.com/creepingthrumordor/smartretail_application/main/demo.mp4">
+    <img src="showcase.png" alt="Watch the SmartRetail demo" width="1000" />
+  </a>
 </p>
+
+[▶ Watch or download the demo](https://raw.githubusercontent.com/creepingthrumordor/smartretail_application/main/demo.mp4)
 
 ## Run
 
