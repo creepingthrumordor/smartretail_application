@@ -20,6 +20,7 @@ CORAL = '#FC4A14'
 GOLD = '#F7B733'
 LAVENDER = '#DFDCE3'
 SLATE = '#AAAAAA'
+SURFACE = '#F8F7F9'
 
 class DashboardWindow:
     def __init__(self, facade=None):

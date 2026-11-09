@@ -5,8 +5,8 @@ A Python desktop application for chunked retail transaction ingestion, validatio
 ## Run
 
 ```bash
-python -m pip install -r smartretail/requirements.txt
-python -m smartretail.main
+python -m pip install -r requirements.txt
+python -m main
 ```
 
 The analytics engine uses only the Python standard library. GUI charts are presented as detailed analysis tables in this initial desktop shell; exports include CSV data or an HTML report.
