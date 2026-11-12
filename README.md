@@ -33,8 +33,14 @@ python3 main.py
 ## Testing
 
 ```bash
-python -m pytest -v
+python -m pip install -r requirements.txt pytest
+cd ..
+python -m pytest smartretail/pytest -v
 ```
+
+Run the test command from the project directory's parent because the test folder is
+named `pytest` and would otherwise shadow the installed pytest package. Replace
+`smartretail` in the command if the project folder has a different name.
 
 The analytics engine is built using Python's standard library and is designed for quick retail insight generation from CSV transaction data.
 

@@ -1,0 +1,15 @@
+# Python bytecode and test/tool caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyright/
+
+# Local virtual environments
+.venv/
+venv/
+
+# Generated test reports
+pytest-results.xml
+pytest-results.txt

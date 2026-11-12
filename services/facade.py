@@ -93,6 +93,8 @@ class SmartRetailFacade:
         started_at = time.perf_counter()
         result = service.run(adapter, file_path, chunk_size, progress_callback)
         result.execution_time_sec = time.perf_counter() - started_at
+        if result.summary.get("total_rows", 0) == 0:
+            raise InputFormatError("Input file contains no transaction records")
         return result
 
     def runAnalysis(

@@ -5,12 +5,20 @@ from smartretail.validation.validator import RecordValidator
 
 def test_csv_adapter_reads_in_chunks_and_preserves_quoted_commas(tmp_path):
     path=tmp_path/'quoted.csv'
-    path.write_text('id,name\n1,"Rice, basmati"\n2,Tea\n3,Milk\n',encoding='utf-8')
+    path.write_text(
+        'id,name\n1,"Rice, basmati"\n2,Tea\n3,Milk\n4,Bread\n5,Apples\n',
+        encoding='utf-8',
+    )
     adapter=CsvInputAdapter();adapter.open(str(path))
     try:
-        first=adapter.read_chunk(2);last=adapter.read_chunk(2)
+        first=adapter.read_chunk(2)
+        second=adapter.read_chunk(2)
+        last=adapter.read_chunk(2)
     finally:adapter.close()
-    assert len(first)==2 and len(last)==1
+    assert [len(chunk) for chunk in (first, second, last)] == [2, 2, 1]
+    assert [row.data.split(",")[0] for row in first + second + last] == [
+        "1", "2", "3", "4", "5"
+    ]
     assert next(csv.reader([first[0].data]))==['1','Rice, basmati']
     assert first[0].line_number==2
 
